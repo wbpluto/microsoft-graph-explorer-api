@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CodeSnippetsReflection;
-using Microsoft.AspNetCore.Http;
-using System.Reflection;
-using System.Text;
+using System.Net.Http;
+using GraphWebApi.Models;
+using Microsoft.Extensions.Options;
 
 namespace GraphWebApi.Controllers
 {
@@ -14,7 +12,13 @@ namespace GraphWebApi.Controllers
     [ApiController]
     public class GraphExplorerSnippetsController : ControllerBase
     {
-        // GET api/values/GET,/me/
+        private GraphVersion GraphVersion { get; set; }
+        public GraphExplorerSnippetsController(IOptions<GraphVersion> settings)
+        {
+            this.GraphVersion = settings.Value;
+        }
+
+        // GET api/graphexplorersnippets/GET,/me/
         [HttpGet]
         [Produces("application/json")]
         public IActionResult Get(string arg)
@@ -35,37 +39,28 @@ namespace GraphWebApi.Controllers
             }
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
+         //POST api/graphexplorersnippets
         [HttpPost]
         public void Post([FromBody] string value)
         {
-        }
+            StreamContent content = new StreamContent(ControllerContext.HttpContext.Request.Body);
+            Task<HttpRequestMessage> httpRequestMessage = content.ReadAsHttpRequestMessageAsync();
+            HttpRequestMessage result = httpRequestMessage.Result;
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
+            bool IsBeta = (bool)result.Properties["IsBeta"];
 
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-    }
+            string serviceRoot;
 
-    public class CodeSnippetResult
-    {
-        public string Code { get; set; }
-        public bool StatusCode { get; set; }
-        public string Message { get; set; }
-        public string Language { get; set; }
+            if(IsBeta)
+            {
+                serviceRoot = GraphVersion.graphBeta;
+            }
+            else
+            {
+                serviceRoot = GraphVersion.graphV1;
+            }   
+
+            SnippetsGenerator snippetGenerator = new SnippetsGenerator(result, serviceRoot);          
+        }
     }
 }
