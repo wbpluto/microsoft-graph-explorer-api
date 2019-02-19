@@ -126,9 +126,9 @@ namespace CodeSnippetsReflection
             StringBuilder selectExpression = new StringBuilder();
 
             selectExpression.Append(".Select(\"");
-            var selectedItems = odatauri.SelectAndExpand.SelectedItems;
+            var pathSelectedItems = odatauri.SelectAndExpand.SelectedItems;
 
-            foreach (PathSelectItem item in selectedItems)
+            foreach (PathSelectItem item in pathSelectedItems)
             {
                 foreach (var si in item.SelectedPath)
                 {
