@@ -11,7 +11,7 @@ namespace CodeSnippetsReflection
     /// </summary>
     internal class RequestPayloadModel
     {
-        public string Url { get; set; }
+        public Uri Uri { get; set; }
         public string Body { get; set; }
         public bool IsBeta { get; set; }
         public List<string> Headers { get; set; }

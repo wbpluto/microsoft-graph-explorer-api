@@ -47,6 +47,9 @@ namespace GraphWebApi.Controllers
             Task<HttpRequestMessage> httpRequestMessage = content.ReadAsHttpRequestMessageAsync();
             HttpRequestMessage result = httpRequestMessage.Result;
 
+
+         
+
             bool IsBeta = (bool)result.Properties["IsBeta"];
 
             string serviceRoot;

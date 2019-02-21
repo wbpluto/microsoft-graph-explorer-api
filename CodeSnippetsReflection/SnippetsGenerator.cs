@@ -10,7 +10,7 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.UriParser;
-
+using System.Linq;
 
 namespace CodeSnippetsReflection
 {
@@ -21,11 +21,21 @@ namespace CodeSnippetsReflection
     {
         private HttpRequestMessage httpRequestMessage;
         private string serviceRoot;
+        private RequestPayloadModel requestPayloadModel;
 
         public SnippetsGenerator(HttpRequestMessage httpRequestMessage, string serviceRoot)
         {
             this.httpRequestMessage = httpRequestMessage;
             this.serviceRoot = serviceRoot;
+        }
+
+
+        public string ProcessPayloadRequest()
+        {
+            requestPayloadModel = new RequestPayloadModel();
+           
+
+            return "";
         }
 
         /// <summary>
@@ -45,7 +55,7 @@ namespace CodeSnippetsReflection
 
             requestPayloadModel = new RequestPayloadModel()
             {
-                Url = @"https://graph.microsoft.com/v1.0/me/messages?$select=subject,IsRead,sender,toRecipients&$filter=IsRead eq false&$skip=10",
+                Uri = new Uri(@"https://graph.microsoft.com/v1.0/me/messages?$select=subject,IsRead,sender,toRecipients&$filter=IsRead eq false&$skip=10"),
                 Headers = new List<string>()
                 {
                     "Content-Type: application/json"
@@ -55,7 +65,7 @@ namespace CodeSnippetsReflection
             };
 
             Uri serviceRootV1 = new Uri(serviceRoot);
-            Uri fullUriV1 = new Uri(requestPayloadModel.Url);
+            Uri fullUriV1 = requestPayloadModel.Uri;
             IEdmModel iedmModel = CsdlReader.Parse(XmlReader.Create(serviceRootV1 + "/$metadata"));
             /*** End of sample data for test purposes **/
 
@@ -85,8 +95,6 @@ namespace CodeSnippetsReflection
             {
                 snippet.Append(SearchExpression(odatauri).ToString());
             }
-
-
 
             snippet.Append(".GetAsync();");
             return snippet.ToString();
@@ -149,9 +157,33 @@ namespace CodeSnippetsReflection
         private StringBuilder FilterExpression(ODataUri odatauri)
         {
             StringBuilder filterExpression = new StringBuilder();
+            string filterResult = "";
 
-            //TODO
+            //Get all the query parts from the uri
+            string fullUriQuerySegment = requestPayloadModel.Uri.Query;
 
+            //Escape all special characters in the uri
+            fullUriQuerySegment = Uri.UnescapeDataString(fullUriQuerySegment);
+
+            //split by the $ symbol to get each OData Query Parser
+            string[] querySegmentList = fullUriQuerySegment.Split('$');
+
+         
+            //Iterate through to find the filter option with the array
+            foreach (var queryOption in querySegmentList)
+            {
+                if (queryOption.Contains("filter"))
+                {
+                    string[] filterQueryOptionParts = queryOption.Split('=');
+                    string filterQueryOption = filterQueryOptionParts.Last();
+
+                    //there are 2 characters we dont need in this segment (=,&)
+                    filterResult = filterQueryOption.Replace('=', ' ');
+                    filterResult = filterQueryOption.Replace('&', ' ').Trim();                  
+                }
+            }
+
+            filterExpression.Append($".Filter(\"{filterResult}\")");
 
             return filterExpression;
         }
